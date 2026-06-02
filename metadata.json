@@ -1,0 +1,6 @@
+{
+  "name": "九一集英社",
+  "description": "专属于九一集英社的私密安全记忆档案馆。记录每一个唐言唐语。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

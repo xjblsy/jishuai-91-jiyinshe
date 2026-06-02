@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "Friend": {
+      "title": "Friend Profile",
+      "description": "Encrypted container of a friend's details",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the friend"
+        },
+        "encryptedData": {
+          "type": "string",
+          "description": "AES-GCM encrypted JSON string containing name, nickname, avatar base64"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this friend was added"
+        }
+      },
+      "required": ["id", "encryptedData", "createdAt"]
+    },
+    "Memory": {
+      "title": "Memory Quote",
+      "description": "Encrypted container of quotes, photographs, and tags related to a friend",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the memory"
+        },
+        "friendId": {
+          "type": "string",
+          "description": "Plainttext ID of the linked friend profile"
+        },
+        "encryptedData": {
+          "type": "string",
+          "description": "AES-GCM encrypted JSON string containing quote, image base64, tags and favorite status"
+        },
+        "favorite": {
+          "type": "boolean",
+          "description": "Plaintext boolean to easily query favorited memories"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the memory creation"
+        }
+      },
+      "required": ["id", "friendId", "encryptedData", "favorite", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/friends/{friendId}": {
+      "schema": "Friend",
+      "description": "Collection of friend profiles for a authenticated user"
+    },
+    "/users/{userId}/memories/{memoryId}": {
+      "schema": "Memory",
+      "description": "Collection of memories/quotes/photos for a authenticated user"
+    }
+  }
+}

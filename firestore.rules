@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Friend document validation
+    function isValidFriend(data) {
+      return data.keys().hasAll(['id', 'encryptedData', 'createdAt'])
+        && data.keys().size() == 3
+        && data.id is string
+        && data.id.size() <= 128
+        && data.encryptedData is string
+        && data.encryptedData.size() <= 500000 // Limit 500KB for encrypted payload including base64 avatar
+        && data.createdAt is timestamp;
+    }
+
+    // Memory document validation
+    function isValidMemory(data) {
+      return data.keys().hasAll(['id', 'friendId', 'encryptedData', 'favorite', 'createdAt'])
+        && data.keys().size() == 5
+        && data.id is string
+        && data.id.size() <= 128
+        && data.friendId is string
+        && data.friendId.size() <= 128
+        && data.encryptedData is string
+        && data.encryptedData.size() <= 1000000 // Limit 1MB for encrypted payload including high-res base64 image
+        && data.favorite is bool
+        && data.createdAt is timestamp;
+    }
+
+    // Collection rules
+    match /users/nineone_communal/{document=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /users/{userId} {
+      // Allow user to check/create their own top-level metadata if requested (not strictly needed, but let's allow it)
+      allow read, write: if isOwner(userId);
+
+      match /friends/{friendId} {
+        allow read, delete: if isOwner(userId);
+        
+        allow create: if isOwner(userId) 
+          && isValidId(friendId)
+          && isValidFriend(incoming())
+          && incoming().createdAt == request.time;
+          
+        allow update: if isOwner(userId)
+          && isValidFriend(incoming())
+          && incoming().id == existing().id
+          && incoming().createdAt == existing().createdAt;
+      }
+
+      match /memories/{memoryId} {
+        allow read, delete: if isOwner(userId);
+        
+        allow create: if isOwner(userId) 
+          && isValidId(memoryId)
+          && isValidMemory(incoming())
+          && incoming().createdAt == request.time;
+          
+        allow update: if isOwner(userId)
+          && isValidMemory(incoming())
+          && incoming().id == existing().id
+          && incoming().friendId == existing().friendId
+          && incoming().createdAt == existing().createdAt;
+      }
+    }
+  }
+}
