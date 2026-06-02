@@ -1,7 +1,7 @@
 name: 📱 自动编译九一集英社 Android APK
 
 on:
-  workflow_dispatch: # 手动触发
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,7 +13,7 @@ jobs:
       - name: 设置 Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22   # 关键修改
 
       - name: 安装依赖
         run: npm install
@@ -24,19 +24,19 @@ jobs:
       - name: 设置 Java
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
-          java-version: "17"
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: 设置 Android SDK
-        uses: android-actions/setup-android@v3 # ← 关键添加
+        uses: android-actions/setup-android@v3
         with:
-          packages: "platforms;android-33 build-tools;33.0.0"
+          packages: 'platforms;android-33 build-tools;33.0.0'
 
       - name: 安装 Capacitor CLI
         run: npm install -g @capacitor/cli
 
-      - name: 添加 Android 平台
-        run: npx cap add android
+      - name: 添加 Android 平台（如果已存在则忽略错误）
+        run: npx cap add android || true
 
       - name: 同步 Web 产物到 Android
         run: npx cap sync
