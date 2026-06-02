@@ -31,16 +31,9 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: 📜 自动接受 Android SDK 协议许可
+      - name: 🔄 初始化并同步 Android 平台外壳
         run: |
-          yes | sdkmanager --licenses || true
-
-      - name: 🔄 同步 Web 静态资源至 Android 底层外壳
-        run: |
-          if [ ! -d "android" ]; then
-            echo "🏁 正在全新初始化 Android 平台外壳..."
-            npx cap add android
-          fi
+          npx cap add android
           npx cap sync android
 
       - name: 🔨 驱动 Gradle 开始流水线构建 APK
