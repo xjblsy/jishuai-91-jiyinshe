@@ -1,56 +1,54 @@
 name: 📱 自动编译九一集英社 Android APK
 
 on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch: # 支持手动点击触发
+  workflow_dispatch: # 手动触发
 
 jobs:
   build:
-    name: 🏗️ 编译 Android APK
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 拉取最新代码
+      - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 🟢 初始化 Node.js 运行环境
+      - name: 设置 Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: 📦 安装 Node.js 依赖关系
+      - name: 安装依赖
         run: npm install
 
-      - name: ⚙️ 编译 Web 网页静态内容 (dist)
+      - name: 构建 React 页面
         run: npm run build
 
-      - name: ☕ 配置 Java 运行环境 (JDK 17)
+      - name: 设置 Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
-      - name: 📜 自动接受 Android SDK 协议许可
-        run: |
-          yes | sdkmanager --licenses || true
+      - name: 设置 Android SDK
+        uses: android-actions/setup-android@v3 # ← 关键添加
+        with:
+          packages: "platforms;android-33 build-tools;33.0.0"
 
-      - name: 🔄 同步 Web 静态资源至 Android 底层外壳
-        run: |
-          if [ ! -d "android" ]; then
-            echo "🏁 正在全新初始化 Android 平台外壳..."
-            npx cap add android
-          fi
-          npx cap sync android
+      - name: 安装 Capacitor CLI
+        run: npm install -g @capacitor/cli
 
-      - name: 🔨 驱动 Gradle 开始流水线构建 APK
+      - name: 添加 Android 平台
+        run: npx cap add android
+
+      - name: 同步 Web 产物到 Android
+        run: npx cap sync
+
+      - name: 编译 Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: 📤 将生成的 APK 保存为 GitHub 下载资产
+      - name: 上传 APK 产物
         uses: actions/upload-artifact@v4
         with:
           name: jiuyivault-android-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/*.apk
