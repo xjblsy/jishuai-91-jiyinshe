@@ -1,0 +1,50 @@
+name: 📱 自动编译九一集英社 Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # 支持手动点击触发
+
+jobs:
+  build:
+    name: 🏗️ 编译 Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 拉取最新代码
+        uses: actions/checkout@v4
+
+      - name: 🟢 初始化 Node.js 运行环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 📦 安装 Node.js 依赖关系
+        run: npm install
+
+      - name: ⚙️ 编译 Web 网页静态内容 (dist)
+        run: npm run build
+
+      - name: ☕ 配置 Java 运行环境 (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 🤖 安装與配置 Android SDK 开发链
+        uses: android-actions/setup-android@v3
+
+      - name: 🔄 同步 Web 静态资源至 Android 底层外壳
+        run: npx cap sync android
+
+      - name: 🔨 驱动 Gradle 开始流水线构建 APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: 📤 将生成的 APK 保存为 GitHub 下载资产
+        uses: actions/upload-artifact@v4
+        with:
+          name: jiuyivault-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
